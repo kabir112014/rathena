@@ -1,0 +1,124 @@
+services:
+  mysql:
+    container_name: ${MYSQL_CONTAINER_NAME:-mysql}
+    image: mysql:${MYSQL_VERSION}
+    restart: unless-stopped
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_USER_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "${MYSQL_PORT}:3306"
+    volumes:
+      - ./data:/var/lib/mysql
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "--password=${MYSQL_ROOT_PASSWORD}"]
+      timeout: 20s
+      retries: 10
+
+  setup:
+    container_name: ${SETUP_CONTAINER_NAME:-setup}
+    image: rathena-setup:${RATHENA_VERSION:-latest}
+    build:
+      dockerfile: Dockerfile.setup
+      context: .
+    restart: no
+    environment:
+      - DB_NAME=${MYSQL_DB}
+      - DB_USER=${MYSQL_USER}
+      - DB_PASS=${MYSQL_USER_PASSWORD}
+      - DB_HOST=mysql
+      - DB_PORT=3306
+    networks:
+      - backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  rathena_login_server:
+    container_name: ${RATHENA_LOGIN_SERVER_CONTAINER_NAME:-rathena_login_server}
+    image: rathena:${RATHENA_VERSION:-latest}
+    build:
+      dockerfile: Dockerfile
+      context: .
+    restart: unless-stopped
+    environment:
+      - SERVER_TYPE=login
+    ports:
+      - "${RATHENA_LOGIN_SERVER_PORT:-6900}:${RATHENA_LOGIN_SERVER_PORT:-6900}"
+    volumes:
+      - ./conf:/rathena/conf
+      - ./npc:/rathena/npc
+    networks:
+      - backend
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+
+  rathena_char_server:
+    container_name: ${RATHENA_CHAR_SERVER_CONTAINER_NAME:-rathena_char_server}
+    image: rathena:${RATHENA_VERSION:-latest}
+    build:
+      dockerfile: Dockerfile
+      context: .
+    restart: unless-stopped
+    environment:
+      - SERVER_TYPE=char
+    ports:
+      - "${RATHENA_CHAR_SERVER_PORT:-6121}:${RATHENA_CHAR_SERVER_PORT:-6121}"
+    volumes:
+      - ./conf:/rathena/conf
+      - ./npc:/rathena/npc
+    networks:
+      - backend
+    depends_on:
+      rathena_login_server:
+        condition: service_started
+
+  rathena_map_server:
+    container_name: ${RATHENA_MAP_SERVER_CONTAINER_NAME:-rathena_map_server}
+    image: rathena:${RATHENA_VERSION:-latest}
+    build:
+      dockerfile: Dockerfile
+      context: .
+    restart: unless-stopped
+    environment:
+      - SERVER_TYPE=map
+    ports:
+      - "${RATHENA_MAP_SERVER_PORT:-5121}:${RATHENA_MAP_SERVER_PORT:-5121}"
+    volumes:
+      - ./conf:/rathena/conf
+      - ./npc:/rathena/npc
+    networks:
+      - backend
+    depends_on:
+      rathena_char_server:
+        condition: service_started
+
+  rathena_web_server:
+    container_name: ${RATHENA_WEB_SERVER_CONTAINER_NAME:-rathena_web_server}
+    image: rathena:${RATHENA_VERSION:-latest}
+    build:
+      dockerfile: Dockerfile
+      context: .
+    restart: unless-stopped
+    environment:
+      - SERVER_TYPE=web
+    ports:
+      - "${RATHENA_WEB_SERVER_PORT:-8080}:${RATHENA_WEB_SERVER_PORT:-8080}"
+    volumes:
+      - ./conf:/rathena/conf
+      - ./npc:/rathena/npc
+    networks:
+      - backend
+    depends_on:
+      rathena_map_server:
+        condition: service_started
+
+networks:
+  backend:
+    name: ${BACKEND_NETWORK_NAME}
+    external: true

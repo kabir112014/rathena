@@ -150,3 +150,7 @@ Thumbs.db
 
 # generated files
 generated
+
+# data folder
+data/
+.env
