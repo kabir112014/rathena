@@ -1,0 +1,9 @@
+FROM mysql:9.2
+
+COPY sql-files /sql-files/
+
+COPY setup-script.sh /usr/local/bin
+
+RUN chmod +x /usr/local/bin/setup-script.sh
+
+ENTRYPOINT ["/usr/local/bin/setup-script.sh"]
