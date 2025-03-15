@@ -32,6 +32,9 @@ services:
       - DB_PASS=${MYSQL_USER_PASSWORD}
       - DB_HOST=mysql
       - DB_PORT=3306
+      - CONF_DIR=/rathena/conf
+    volumes:
+      - ./conf:/rathena/conf
     networks:
       - backend
     depends_on:
