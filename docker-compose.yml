@@ -61,6 +61,7 @@ services:
     volumes:
       - ./conf:/rathena/conf
       - ./npc:/rathena/npc
+      - ./db/import:/rathena/db/import
     networks:
       - backend
     depends_on:
@@ -81,6 +82,7 @@ services:
     volumes:
       - ./conf:/rathena/conf
       - ./npc:/rathena/npc
+      - ./db/import:/rathena/db/import
     networks:
       - backend
     depends_on:
@@ -101,6 +103,7 @@ services:
     volumes:
       - ./conf:/rathena/conf
       - ./npc:/rathena/npc
+      - ./db/import:/rathena/db/import
     networks:
       - backend
     depends_on:
@@ -121,6 +124,7 @@ services:
     volumes:
       - ./conf:/rathena/conf
       - ./npc:/rathena/npc
+      - ./db/import:/rathena/db/import
     networks:
       - backend
     depends_on:
